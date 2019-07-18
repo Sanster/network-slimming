@@ -149,7 +149,7 @@ for layer_id in range(len(old_modules)):
         if idx1.size == 1:
             idx1 = np.resize(idx1,(1,))
 
-        if isinstance(old_modules[layer_id + 1], channel_selection):
+        if isinstance(old_modules[layer_id + 1], ChannelSelection):
             # If the next layer is the channel selection layer, then the current batchnorm 2d layer won't be pruned.
             m1.weight.data = m0.weight.data.clone()
             m1.bias.data = m0.bias.data.clone()
@@ -179,7 +179,7 @@ for layer_id in range(len(old_modules)):
             m1.weight.data = m0.weight.data.clone()
             conv_count += 1
             continue
-        if isinstance(old_modules[layer_id-1], channel_selection) or isinstance(old_modules[layer_id-1], nn.BatchNorm2d):
+        if isinstance(old_modules[layer_id-1], ChannelSelection) or isinstance(old_modules[layer_id - 1], nn.BatchNorm2d):
             # This convers the convolutions in the residual block.
             # The convolutions are either after the channel selection layer or after the batch normalization layer.
             conv_count += 1
