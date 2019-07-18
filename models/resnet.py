@@ -60,7 +60,7 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.channel_selection = ChannelSelection(planes)
+        # self.channel_selection = ChannelSelection(planes)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
                                padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
@@ -75,7 +75,7 @@ class Bottleneck(nn.Module):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = self.channel_selection(out)
+        # out = self.channel_selection(out)
         out = self.relu(out)
 
         out = self.conv2(out)
@@ -101,11 +101,11 @@ class ResNet(nn.Module):
 
         # block.expansion = max(int(block.expansion * ratio), 1)
         self.inplanes = int(64 * ratio)
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=3, stride=2, padding=3, bias=False)
+        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(self.inplanes)
-        self.select = ChannelSelection(self.inplanes)
+        # self.select = ChannelSelection(self.inplanes)
         self.relu1 = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        # self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.avgpool = nn.AvgPool2d(7, stride=1)
 
         layer1_planes = int(64 * ratio)
@@ -149,16 +149,16 @@ class ResNet(nn.Module):
     def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
-        x = self.select(x)
+        # x = self.select(x)
         x = self.relu1(x)
-        x = self.maxpool(x)
+        # x = self.maxpool(x)
 
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
 
-        x = F.avg_pool2d(x, 2)
+        x = F.avg_pool2d(x, 4)
         x = x.reshape(x.size(0), -1)
         x = self.fc(x)
 
