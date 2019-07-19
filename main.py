@@ -10,7 +10,7 @@ import torchvision
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
-from models import resnet50
+from models import *
 from checkpointer import Checkpointer, BestCheckpointer
 
 
@@ -26,7 +26,7 @@ def parse_args():
                         help='path to the pruned model to be fine tuned')
     parser.add_argument('--batch-size', type=int, default=256, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--epochs', type=int, default=250, metavar='N',
+    parser.add_argument('--epochs', type=int, default=300, metavar='N',
                         help='number of epochs to train (default: 160)')
     parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
                         help='learning rate (default: 0.1)')
@@ -42,7 +42,7 @@ def parse_args():
                         help='path to save prune model (default: current directory)')
     parser.add_argument('--log-dir', default='./logs', type=str, metavar='PATH',
                         help='path to save prune model (default: current directory)')
-    parser.add_argument('--arch', default='res50', type=str,
+    parser.add_argument('--arch', default='res50', type=str, choices=['res50','preact_res18', 'preact_res34', 'preact_res50'],
                         help='architecture to use')
     parser.add_argument('--tag', default='')
 
@@ -74,7 +74,7 @@ classes = ('plane', 'car', 'bird', 'cat',
 global_train_step = 0
 
 def create_dataloader(batch_size):
-    norm = torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    norm = torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))
     to_tensor = torchvision.transforms.ToTensor()
 
     train_transform = torchvision.transforms.Compose([
@@ -105,6 +105,14 @@ def create_summary_writer(save_dir: Path):
     test_writer = SummaryWriter(str(save_dir / 'test'))
     return train_writer, test_writer
 
+def get_model(arch):
+    models = dict(
+        res50=Resnet50,
+        preact_res18=PreActResNet18,
+        preact_res34=PreActResNet34,
+        preact_res50=PreActResNet50,
+    )
+    return models[arch]
 
 def main():
     args = parse_args()
@@ -114,12 +122,11 @@ def main():
     trainloader, testloader = create_dataloader(batch_size=args.batch_size)
     train_writer, test_writer = create_summary_writer(args.log_dir)
 
-    model = resnet50(pretrained=False, num_classes=10)
+    model = get_model(args.arch)()
     model.to(device)
 
-
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[100, 200], gamma=0.1)
 
     saver = Checkpointer(model, optimizer, scheduler, str(args.ckpt_dir))
@@ -148,8 +155,11 @@ def main():
 
 
 def train_epoch(model, dataloader, criterion, optimizer, writer, device, epoch):
+    model.train()
     global global_train_step
     loop = tqdm(dataloader)
+    total = 0
+    correct = 0
     for i, (inputs, labels) in enumerate(loop):
         inputs, labels = inputs.to(device), labels.to(device)
 
@@ -160,14 +170,21 @@ def train_epoch(model, dataloader, criterion, optimizer, writer, device, epoch):
         loss.backward()
         optimizer.step()
 
+        _, predicted = outputs.max(1)
+        total += labels.size(0)
+        correct += predicted.eq(labels).sum().item()
+
         loop.set_postfix(loss=loss.item())
 
         global_train_step += 1
-        if global_train_step % 5 == 0:
-            writer.add_scalar('loss', loss.item(), global_train_step)
+
+    acc = correct / total * 100
+    writer.add_scalar('loss', loss.item(), global_train_step)
+    writer.add_scalar('acc', acc ,global_train_step)
 
 
 def run_test(model, dataloader, criterion, writer, device, epoch):
+    model.eval()
     print("run test...")
     correct = 0
     total = 0

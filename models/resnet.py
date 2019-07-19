@@ -6,15 +6,6 @@ import torch
 
 from .channel_selection import ChannelSelection
 
-__all__ = ['ResNet', 'resnet50', 'resnet101', 'resnet152']
-
-model_urls = {
-    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
-    'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
-    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
-}
-
-
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
@@ -96,7 +87,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=7, ratio=1):
+    def __init__(self, block, layers, num_classes=10, ratio=1):
         super(ResNet, self).__init__()
 
         # block.expansion = max(int(block.expansion * ratio), 1)
@@ -105,8 +96,6 @@ class ResNet(nn.Module):
         self.bn1 = nn.BatchNorm2d(self.inplanes)
         # self.select = ChannelSelection(self.inplanes)
         self.relu1 = nn.ReLU(inplace=True)
-        # self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.avgpool = nn.AvgPool2d(7, stride=1)
 
         layer1_planes = int(64 * ratio)
         self.layer1 = self._make_layer(block, layer1_planes, layers[0])
@@ -165,7 +154,7 @@ class ResNet(nn.Module):
         return x
 
 
-def resnet50(pretrained=False, num_classes=7, **kwargs):
+def Resnet50(num_classes=10, **kwargs):
     """Constructs a ResNet-50 model.
 
     Args:

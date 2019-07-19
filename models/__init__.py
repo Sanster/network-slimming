@@ -1,1 +1,2 @@
-from .resnet import resnet50
+from .resnet import *
+from .preact_resnet import *
