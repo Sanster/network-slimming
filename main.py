@@ -114,6 +114,11 @@ def get_model(arch):
     )
     return models[arch]
 
+def update_bn(model, s=0.0001):
+    for m in model.modules():
+        if isinstance(m, nn.BatchNorm2d):
+            m.weight.grad.data.add_(s * torch.sign(m.weight.data))  # L1
+
 def main():
     args = parse_args()
     torch.manual_seed(args.seed)
@@ -168,6 +173,7 @@ def train_epoch(model, dataloader, criterion, optimizer, writer, device, epoch):
         outputs = model(inputs)
         loss = criterion(outputs, labels)
         loss.backward()
+        update_bn(model)
         optimizer.step()
 
         _, predicted = outputs.max(1)
