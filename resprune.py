@@ -64,7 +64,7 @@ def main(args):
     cfg = []
     # 每层 BN 层通道的 mask，记录哪些通道要剪枝
     bn_channel_mask = []
-    for idx, m in enumerate(model.modules()):
+    for _, (name, m) in enumerate(model.named_modules()):
         if isinstance(m, nn.BatchNorm2d):
             weight_copy = m.weight.data.abs().clone()
             mask = weight_copy.gt(bn_weight_thresh).float().to(device)
@@ -78,7 +78,7 @@ def main(args):
 
             cfg.append(remain_channel_count)
             bn_channel_mask.append(mask.clone())
-            print(f"BN layer index: {idx}\t"
+            print(f"BN layer name: {name}\t"
                   f"pruned {(pruned_channel_count / channel_count) * 100:.2f}%"
                   f"({pruned_channel_count}/{channel_count})")
 
@@ -120,11 +120,6 @@ def main(args):
                 m2 = pruned_modules[layer_idx + 1]
                 m2.indexes.data.zero_()
                 m2.indexes.data[next_bn_remain_channel_idxes.tolist()] = 1.0
-
-                layer_idx_in_cfg += 1
-                pre_bn_channel_mask = next_bn_channel_mask.clone()
-                if layer_idx_in_cfg < len(bn_channel_mask):  # do not change in Final FC
-                    next_bn_channel_mask = bn_channel_mask[layer_idx_in_cfg]
             else:
                 # BN 层只获得 mask 为 1 的 channel
                 m1.weight.data = m0.weight.data[next_bn_remain_channel_idxes.tolist()].clone()
@@ -132,10 +127,10 @@ def main(args):
                 m1.running_mean = m0.running_mean[next_bn_remain_channel_idxes.tolist()].clone()
                 m1.running_var = m0.running_var[next_bn_remain_channel_idxes.tolist()].clone()
 
-                layer_idx_in_cfg += 1
-                pre_bn_channel_mask = next_bn_channel_mask.clone()
-                if layer_idx_in_cfg < len(bn_channel_mask):  # do not change in Final FC
-                    next_bn_channel_mask = bn_channel_mask[layer_idx_in_cfg]
+            layer_idx_in_cfg += 1
+            pre_bn_channel_mask = next_bn_channel_mask.clone()
+            if layer_idx_in_cfg < len(bn_channel_mask):  # do not change in Final FC
+                next_bn_channel_mask = bn_channel_mask[layer_idx_in_cfg]
         elif isinstance(m0, nn.Conv2d):
             if conv_count == 0:
                 # 对应 conv1
@@ -183,10 +178,11 @@ def main(args):
 
     # cfg 用来构造 model
     # state_dict 用来恢复参数
-    pruned_model_path = os.path.join(args.save_dir, 'pruned.pth.tar')
+    pruned_model_path = os.path.join(args.save_dir, f'{args.arch}_pruned.pth.tar')
+    print(f'Pruned model save to: {pruned_model_path}')
     torch.save({
         'cfg': cfg,
-        'state_dict': pruned_model.state_dict()
+        Checkpointer.MODEL_STATE: pruned_model.state_dict()
     }, pruned_model_path)
 
     pruned_ckpt_size = get_file_mb(pruned_model_path)
@@ -215,9 +211,9 @@ if __name__ == "__main__":
                         help='training dataset (default: cifar10)')
     parser.add_argument('--percent', type=float, default=0.4,
                         help='scale sparse rate (default: 0.5)')
-    parser.add_argument('--no-cuda', action='store_true', default=False,
+    parser.add_argument('--no_cuda', action='store_true', default=False,
                         help='disables CUDA training')
-    parser.add_argument('--ckpt_dir', default='./ckpts/preact_res20/best_acc', type=str, metavar='PATH',
+    parser.add_argument('--ckpt_dir', default='./ckpts/preact_res20_sr_sr/best_acc', type=str, metavar='PATH',
                         help='path to the model (default: none)')
     parser.add_argument('--save_dir', default='./ckpts/pruned', type=str, metavar='PATH',
                         help='path to save pruned model (default: none)')

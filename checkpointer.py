@@ -4,12 +4,12 @@ from collections import OrderedDict, namedtuple
 
 import torch
 
-MODEL_STATE = 'model_state_dict'
-OPTIMIZER_STATE = 'optimizer_state_dict'
-SCHEDULER_STATE = 'scheduler_state_dict'
-
 
 class Checkpointer:
+    MODEL_STATE = 'model_state_dict'
+    OPTIMIZER_STATE = 'optimizer_state_dict'
+    SCHEDULER_STATE = 'scheduler_state_dict'
+
     def __init__(
             self,
             model,
@@ -48,11 +48,11 @@ class Checkpointer:
         if not self.save_dir:
             return
 
-        data = {MODEL_STATE: self.model.state_dict()}
+        data = {self.MODEL_STATE: self.model.state_dict()}
         if self.optimizer is not None:
-            data[OPTIMIZER_STATE] = self.optimizer.state_dict()
+            data[self.OPTIMIZER_STATE] = self.optimizer.state_dict()
         if self.scheduler is not None:
-            data[SCHEDULER_STATE] = self.scheduler.state_dict()
+            data[self.SCHEDULER_STATE] = self.scheduler.state_dict()
 
         model_save_path = os.path.join(self.save_dir, "{}.pth.tar".format(name))
         print("Saving checkpoint to {}".format(model_save_path))
@@ -70,8 +70,8 @@ class Checkpointer:
         with open(self.cache_file, 'w', encoding='utf-8') as f:
             json.dump(self.cache_data, f, indent=2, ensure_ascii=False)
 
-    def load(self):
-        if self.has_checkpoint():
+    def load(self, f=None):
+        if f is None and self.has_checkpoint():
             # override argument with existing checkpoint
             f = self.cache_data['last']
 
@@ -83,13 +83,13 @@ class Checkpointer:
         checkpoint = self._load_file(f)
         self._load_model(checkpoint)
 
-        if OPTIMIZER_STATE in checkpoint and self.optimizer:
+        if self.OPTIMIZER_STATE in checkpoint and self.optimizer:
             print("Loading optimizer from {}".format(f))
-            self.optimizer.load_state_dict(checkpoint.pop(OPTIMIZER_STATE))
+            self.optimizer.load_state_dict(checkpoint.pop(self.OPTIMIZER_STATE))
 
-        if SCHEDULER_STATE in checkpoint and self.scheduler:
+        if self.SCHEDULER_STATE in checkpoint and self.scheduler:
             print("Loading scheduler from {}".format(f))
-            self.scheduler.load_state_dict(checkpoint.pop(SCHEDULER_STATE))
+            self.scheduler.load_state_dict(checkpoint.pop(self.SCHEDULER_STATE))
 
         # return any further checkpoint data
         return f
@@ -115,7 +115,7 @@ class Checkpointer:
         return torch.load(f, map_location=torch.device("cpu"))
 
     def _load_model(self, checkpoint):
-        loaded_state_dict = checkpoint.pop(MODEL_STATE)
+        loaded_state_dict = checkpoint.pop(self.MODEL_STATE)
         model_state_dict = self.model.state_dict()
         # if the state_dict comes from a model that was wrapped in a
         # DataParallel or DistributedDataParallel during serialization,
@@ -153,7 +153,7 @@ class BestCheckpointer(Checkpointer):
         super(BestCheckpointer, self).load()
         if self.has_checkpoint():
             self.best_value = self.cache_data['best_value']
-    
+
     def save(self, name):
         self.cache_data['best_value'] = self.best_value
         super(BestCheckpointer, self).save(name)
