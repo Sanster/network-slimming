@@ -92,7 +92,7 @@ class Checkpointer:
             self.scheduler.load_state_dict(checkpoint.pop(SCHEDULER_STATE))
 
         # return any further checkpoint data
-        return checkpoint
+        return f
 
     def has_checkpoint(self):
         if not self.cache_file:

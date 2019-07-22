@@ -1,6 +1,7 @@
 import torch
 import torchvision
 from models import *
+import functools
 
 
 def create_dataloader(batch_size):
@@ -28,11 +29,12 @@ def create_dataloader(batch_size):
     return trainloader, testloader
 
 
-def get_model(arch):
+def get_model(arch, cfg=None):
     models = dict(
-        res50=Resnet50,
-        preact_res18=PreActResNet18,
-        preact_res34=PreActResNet34,
-        preact_res50=PreActResNet50,
+        preact_res20=functools.partial(PreResnet, depth=20, cfg=cfg),
     )
     return models[arch]()
+
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)

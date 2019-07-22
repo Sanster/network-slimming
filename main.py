@@ -42,7 +42,7 @@ def main(args):
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[100, 200], gamma=0.1)
+    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[80, 120], gamma=0.1)
 
     saver = Checkpointer(model, optimizer, scheduler, str(args.ckpt_dir))
 
@@ -139,7 +139,7 @@ if __name__ == "__main__":
                         help='path to the pruned model to be fine tuned')
     parser.add_argument('--batch-size', type=int, default=256, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--epochs', type=int, default=300, metavar='N',
+    parser.add_argument('--epochs', type=int, default=160, metavar='N',
                         help='number of epochs to train (default: 160)')
     parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
                         help='learning rate (default: 0.1)')
@@ -155,8 +155,8 @@ if __name__ == "__main__":
                         help='path to save prune model (default: current directory)')
     parser.add_argument('--log-dir', default='./logs', type=str, metavar='PATH',
                         help='path to save prune model (default: current directory)')
-    parser.add_argument('--arch', default='res50', type=str,
-                        choices=['res50', 'preact_res18', 'preact_res34', 'preact_res50'],
+    parser.add_argument('--arch', default='preact_res20', type=str,
+                        choices=['preact_res20'],
                         help='architecture to use')
     parser.add_argument('--tag', default='')
 
