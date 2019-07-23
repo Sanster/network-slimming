@@ -44,7 +44,7 @@ class Checkpointer:
             """
             self.cache_data = self._load_cache_data()
 
-    def save(self, name):
+    def save(self, name, **kwargs):
         if not self.save_dir:
             return
 
@@ -53,6 +53,10 @@ class Checkpointer:
             data[self.OPTIMIZER_STATE] = self.optimizer.state_dict()
         if self.scheduler is not None:
             data[self.SCHEDULER_STATE] = self.scheduler.state_dict()
+
+        for k, v in kwargs.items():
+            if v is not None:
+                data[k] = v
 
         model_save_path = os.path.join(self.save_dir, "{}.pth.tar".format(name))
         print("Saving checkpoint to {}".format(model_save_path))
@@ -154,6 +158,6 @@ class BestCheckpointer(Checkpointer):
         if self.has_checkpoint():
             self.best_value = self.cache_data['best_value']
 
-    def save(self, name):
+    def save(self, name, **kwargs):
         self.cache_data['best_value'] = self.best_value
-        super(BestCheckpointer, self).save(name)
+        super(BestCheckpointer, self).save(name, **kwargs)

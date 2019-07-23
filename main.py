@@ -76,15 +76,15 @@ def main(args):
         print(f"Epoch {epoch} test acc: {acc:.3f} loss: {test_loss:.3f} time: {time.time() - test_start_time:.3f}s")
 
         ckpt_name = f'ckpt_{global_train_step}_acc{acc:.3f}_loss{test_loss:.4f}.pth'
-        saver.save(ckpt_name)
+        saver.save(ckpt_name, cfg=cfg)
 
         if acc >= best_acc_saver.best_value:
             best_acc_saver.best_value = acc
-            best_acc_saver.save(ckpt_name)
+            best_acc_saver.save(ckpt_name, cfg=cfg)
 
         if lowest_loss_saver.best_value <= test_loss:
             lowest_loss_saver.best_value = test_loss
-            lowest_loss_saver.save(ckpt_name)
+            lowest_loss_saver.save(ckpt_name, cfg=cfg)
 
     print('Finished Training')
 

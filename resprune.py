@@ -209,16 +209,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='PyTorch Slimming CIFAR training')
     parser.add_argument('--dataset', type=str, default='cifar10',
                         help='training dataset (default: cifar10)')
-    parser.add_argument('--percent', type=float, default=0.4,
+    parser.add_argument('--percent', type=float, default=0.6,
                         help='scale sparse rate (default: 0.5)')
     parser.add_argument('--no_cuda', action='store_true', default=False,
                         help='disables CUDA training')
-    parser.add_argument('--ckpt_dir', default='./ckpts/preact_res20_sr_sr/best_acc', type=str, metavar='PATH',
+    parser.add_argument('--ckpt_dir', default='./ckpts/preact_res20_sr/best_acc', type=str, metavar='PATH',
                         help='path to the model (default: none)')
     parser.add_argument('--save_dir', default='./ckpts/pruned', type=str, metavar='PATH',
                         help='path to save pruned model (default: none)')
     parser.add_argument('--arch', default='preact_res20', type=str,
-                        choices=['preact_res20'],
+                        choices=['preact_res20', 'preact_res101'],
                         help='architecture to use')
 
     args = parser.parse_args()
